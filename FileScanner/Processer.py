@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Callable
+from typing import override
 
 
 class BaseProcessResult(ABC):
@@ -11,7 +11,6 @@ class BaseProcessResult(ABC):
     def data(self):
         """获取处理后的结果"""
         return self._data
-
 
     def _calculation_error_str(self, other):
         """获取计算错误的字符串表示"""
@@ -41,18 +40,6 @@ class BaseProcessResult(ABC):
             return self
         raise TypeError(self._calculation_error_str(other))
 
-class ProcessResult(BaseProcessResult):
-    def __init__(self, data):
-        super().__init__(data)
-
-    def _add(self, other: "ProcessResult") -> "ProcessResult":
-        """重载加法运算符，返回一个新的 ProcessResult"""
-        return ProcessResult(self.data + other.data)
-
-    def _iadd(self, other: "ProcessResult") -> None:
-        """重载加法赋值运算符"""
-        self._data += other.data
-
 
 class IProcesser(ABC):
     @abstractmethod
@@ -67,14 +54,32 @@ class IProcesser(ABC):
         raise NotImplementedError("Subclasses must implement this method")
 
 
-class Processer(IProcesser):
-    def __init__(self, fuc: Callable[[Path], BaseProcessResult]=lambda x: ProcessResult([x])):
-        self._fuc: Callable = fuc
+class DefaultProcessResult(BaseProcessResult):
+    @override
+    def __init__(self, data: list):
+        super().__init__(data)
 
+    @override
+    def _add(self, other: "DefaultProcessResult") -> "DefaultProcessResult":
+        """重载加法运算符，返回一个新的 DefaultProcessResult"""
+        combined_data: list = self.data.copy()
+        combined_data.extend(other.data)
+        return DefaultProcessResult(combined_data)
+
+    @override
+    def _iadd(self, other: "DefaultProcessResult") -> None:
+        """重载加法赋值运算符"""
+        self.data.extend(other.data)
+
+
+class DefaultProcesser(IProcesser):
+    @override
     def process(self, path: Path) -> BaseProcessResult:
-        """处理数据，默认返回原数据"""
-        return self._fuc(path)
+        """默认处理器，返回文件路径作为结果"""
+        return DefaultProcessResult([path])
 
+    @override
     @property
     def empty_process_result(self) -> BaseProcessResult:
-        return ProcessResult([])
+        """返回一个空处理结果"""
+        return DefaultProcessResult([])
