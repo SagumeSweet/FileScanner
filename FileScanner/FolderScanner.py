@@ -8,22 +8,15 @@ from .Logger import IScannerLogger
 from .Processer import IProcesser, BaseProcessResult, DefaultProcesser
 
 
-
 class FolderScanner:
-    def __init__(self, root_path: Union[str, Path], logger: IScannerLogger, max_workers: int = 10, processer: IProcesser = DefaultProcesser()) -> None:
+    def __init__(self, root_path: Union[str, Path], executor: ThreadPoolExecutor, logger: IScannerLogger, processer: IProcesser = DefaultProcesser()) -> None:
         self._root_path: Path = Path(root_path)
-        self._executor: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=max_workers)
+        self._executor: ThreadPoolExecutor = executor
         self._futures: Queue[Future] = Queue()
         self._results_queue: Queue[BaseProcessResult] = Queue()
         self._results: Optional[BaseProcessResult] = None
         self._processer: IProcesser = processer
         self._logger: IScannerLogger = logger
-
-    def __enter__(self) -> "FolderScanner":
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        self._executor.shutdown(wait=True)
 
     @property
     def root_path(self) -> Path:
@@ -82,11 +75,13 @@ class FolderScanner:
 
     def convert_to_json_file(self) -> None:
         """将处理结果转换为 JSON 文件"""
+
         class PathEncoder(json.JSONEncoder):
             def default(self, obj):
                 if isinstance(obj, Path):
                     return str(obj.resolve())
                 return super().default(obj)
+
         file_path = Path(f"{self._processer.__class__.__name__}_result.json")
         with file_path.open("w", encoding="utf-8") as f:
             json.dump(self.result.data, f, ensure_ascii=False, indent=4, cls=PathEncoder)
