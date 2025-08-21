@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "file-scanner"
+name = "FileScanner"
 version = "0.1.2"
 description = "Multi-threaded folder scanner with pluggable processors."
 authors = [
