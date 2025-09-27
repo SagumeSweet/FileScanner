@@ -4,8 +4,8 @@ from pathlib import Path
 from queue import Queue
 from typing import Union, Callable, Optional
 
-from .Logger import IScannerLogger
-from .Processer import IProcesser, BaseProcessResult, DefaultProcesser
+from Logger import IScannerLogger
+from Processer import IProcesser, BaseProcessResult, DefaultProcesser
 
 
 class FolderScanner:
